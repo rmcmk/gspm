@@ -29,16 +29,18 @@ class GspmPlugin : Plugin<Settings> {
     }
 
     /**
-     * Applies the [GspmProjectPlugin] to the root project. This plugin is
-     * required to configure the submodules as included builds.
+     * Applies the [GspmProjectPlugin] to the root project. This plugin is required to configure the submodules as
+     * included builds.
      *
      * @receiver The settings to apply the plugin to.
      * @see GspmProjectPlugin
      */
     private fun Settings.applyPlugins() {
-        gradle.rootProject {
-            afterEvaluate {
-                plugins.apply(GspmProjectPlugin::class)
+        gradle.settingsEvaluated {
+            gradle.rootProject {
+                afterEvaluate {
+                    plugins.apply(GspmProjectPlugin::class)
+                }
             }
         }
     }
