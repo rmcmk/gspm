@@ -46,9 +46,7 @@ class GspmPlugin : Plugin<Settings> {
     private fun Settings.applyPlugins() {
         gradle.settingsEvaluated {
             gradle.rootProject {
-                afterEvaluate {
-                    plugins.apply(GspmProjectPlugin::class)
-                }
+                plugins.apply(GspmProjectPlugin::class)
             }
         }
     }
