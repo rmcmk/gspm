@@ -10,7 +10,8 @@ import org.gradle.api.initialization.dsl.VersionCatalogBuilder
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.model
 import org.gradle.tooling.GradleConnector
-import java.nio.file.Paths
+import java.util.Properties
+import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createTempFile
 import kotlin.io.path.deleteIfExists
@@ -53,12 +54,10 @@ class GspmPlugin : Plugin<Settings> {
     }
 
     /**
-     * Configures the submodules for the this [Settings]. This method will
-     * recursively configure all submodules. The submodule configuration is
-     * done by creating a temporary initialization script and injecting it into
-     * the submodule's build script and extracting information required to
-     * construct a composite build and versioning information for the version
-     * catalog.
+     * Configures the submodules for the this [Settings]. This method will recursively configure all submodules.
+     * The submodule configuration is done by creating a temporary initialization script and injecting it into the
+     * submodule's build script and extracting information required to construct a composite build and versioning
+     * information for the version catalog.
      *
      * @receiver The settings to configure the submodules for.
      * @see createInitScript
@@ -66,38 +65,32 @@ class GspmPlugin : Plugin<Settings> {
     @Suppress("UnstableApiUsage")
     private fun Settings.configureSubmodules() {
         val root = layout.rootDirectory.toString()
-        val file = Paths.get(root, GIT_MODULES_FILE_NAME)
+        val file = Path(root, GIT_MODULES_FILE_NAME)
 
         SubmoduleDefinition.fromFile(file).forEach { submodule ->
-            val path = Paths.get(root, submodule.path)
+            val path = Path(root, submodule.path)
 
-            GradleConnector
-                .newConnector()
-                .forProjectDirectory(path.toFile())
-                .connect()
-                .use { connection ->
-                    val temp =
-                        createTempFile(path, "gradle-init", ".gradle").apply {
-                            writeText(createInitScript())
-                        }
-
-                    try {
-                        val module =
-                            connection.model(GradleModule::class)
-                                .withArguments("--init-script", temp.absolutePathString())
-                                .setStandardOutput(System.out)
-                                .setStandardError(System.err)
-                                .get()
-
-                        // Include the submodule as a composite build.
-                        includeBuild(module.path)
-
-                        // Create a version catalog for the submodule and its children.
-                        createVersionCatalog(module)
-                    } finally {
-                        temp.deleteIfExists()
+            GradleConnector.newConnector().forProjectDirectory(path.toFile()).connect().use { connection ->
+                val temp =
+                    createTempFile(path, "gradle-init", ".gradle").apply {
+                        writeText(createInitScript())
                     }
+
+                try {
+                    val module =
+                        connection.model(GradleModule::class)
+                            .withArguments("--init-script", temp.absolutePathString()).setStandardOutput(System.out)
+                            .setStandardError(System.err).get()
+
+                    // Include the submodule as a composite build.
+                    includeBuild(module.path)
+
+                    // Create a version catalog for the submodule and its children.
+                    createVersionCatalog(module)
+                } finally {
+                    temp.deleteIfExists()
                 }
+            }
         }
     }
 
@@ -108,12 +101,10 @@ class GspmPlugin : Plugin<Settings> {
      */
     private fun Settings.createVersionCatalog(module: GradleModule) {
         // TODO(rmcmk): `gspm` should be configurable, collisions are possible
-        dependencyResolutionManagement
-            .versionCatalogs
-            .create("gspm") {
-                addLibrary(module)
-                module.children.forEach { addLibrary(it) }
-            }
+        dependencyResolutionManagement.versionCatalogs.create("gspm") {
+            addLibrary(module)
+            module.children.forEach { addLibrary(it) }
+        }
     }
 
     /**
@@ -127,13 +118,10 @@ class GspmPlugin : Plugin<Settings> {
         }
 
     /**
-     * Creates an initialization script for the given [Settings] to include
-     * submodule information. To gather details about the included submodule,
-     * the script injects the [GradleModuleToolingPlugin] into the submodule's
-     * build script. This plugin registers a [GradleModuleBuilder], which
-     * builds a [GradleModule]. The model is then used to generate a version
-     * catalog for the submodule and provide additional metadata not available
-     * by default in Gradle.
+     * Creates an initialization script for the given [Settings] to include submodule information. To gather details
+     * about the included submodule, the script injects the [GradleModuleToolingPlugin] into the submodule's build
+     * script. This plugin registers a [GradleModuleBuilder], which builds a [GradleModule]. The model is then used to
+     * generate a version catalog for the submodule and provide additional metadata not available by default in Gradle.
      *
      * @receiver The settings to create the initialization script for.
      */
@@ -166,8 +154,8 @@ class GspmPlugin : Plugin<Settings> {
 
     companion object {
         /**
-         * The path to the submodule definitions. This path is not configurable.
-         * Git requires its location to be at `$GIT_WORK_TREE/.gitmodules`.
+         * The path to the submodule definitions. This path is not configurable. Git requires its location to be at
+         * `$GIT_WORK_TREE/.gitmodules`.
          *
          * @see <a href="https://git-scm.com/docs/gitmodules">.gitmodules spec</a>
          */
