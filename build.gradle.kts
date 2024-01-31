@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "dev.rmcmk.gspm"
-version = "1.0.0-RC1"
+version = "1.0.1-RC1"
 
 dependencies {
     implementation(libs.java.ini.parser)
@@ -23,7 +23,7 @@ dependencies {
                 "Treats Git Submodules as first class citizens in a Gradle build. Provides a version catalog for submodules and a way to manage them."
             id = "gspm"
             tags = setOf("submodules", "version catalog", "git", "package manager")
-            implementationClass = "dev.rmcmk.gspm.gradle.GspmProjectPlugin"
+            implementationClass = "dev.rmcmk.gspm.gradle.GspmPlugin"
         }
     }
 }
