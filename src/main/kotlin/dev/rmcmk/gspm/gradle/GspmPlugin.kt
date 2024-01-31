@@ -67,27 +67,35 @@ class GspmPlugin : Plugin<Settings> {
 
         SubmoduleDefinition.fromFile(file).forEach { submodule ->
             val path = Path(root, submodule.path)
+            val temp = createTempFile(path, "gradle-init", ".gradle").apply {
+                writeText(createInitScript())
 
-            GradleConnector.newConnector().forProjectDirectory(path.toFile()).connect().use { connection ->
-                val temp =
-                    createTempFile(path, "gradle-init", ".gradle").apply {
-                        writeText(createInitScript())
-                    }
+                // Mark this file for deletion on JVM exit.
+                // Unsure if this is appropriate, as this plugin is always ran inside a Gradle daemon,
+                // which can be a long-lived process and has the potential to create a lot of temp files
+                // that are seldom deleted. We'll keep it anyway and aggressively delete when we're done also.
+                toFile().deleteOnExit()
+            }
 
-                try {
+            try {
+                GradleConnector.newConnector().forProjectDirectory(path.toFile()).connect().use { connection ->
                     val module =
                         connection.model(GradleModule::class)
-                            .withArguments("--init-script", temp.absolutePathString()).setStandardOutput(System.out)
-                            .setStandardError(System.err).get()
+                            .withArguments("--init-script", temp.absolutePathString())
+                            .setStandardOutput(System.out)
+                            .setStandardError(System.err)
+                            .get()
 
                     // Include the submodule as a composite build.
                     includeBuild(module.path)
 
                     // Create a version catalog for the submodule and its children.
                     createVersionCatalog(module)
-                } finally {
-                    temp.deleteIfExists()
                 }
+            } catch (cause: Exception) {
+                throw PluginInstantiationException("Failed to configure submodule at $path", cause)
+            } finally {
+                temp.deleteIfExists()
             }
         }
     }
