@@ -10,8 +10,8 @@ plugins {
 	alias(libs.plugins.kotlinter)
 }
 
-group = "dev.rmcmk.gspm"
-version = "1.0.0-RC2"
+group = "com.github.rmcmk.gspm"
+version = "1.0.0-RC3"
 
 dependencies {
     implementation(libs.java.ini.parser)
