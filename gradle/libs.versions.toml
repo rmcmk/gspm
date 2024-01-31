@@ -1,0 +1,6 @@
+[libraries]
+java-ini-parser = { module = "com.github.vincentrussell:java-ini-parser", version = "1.6" }
+
+[plugins]
+gradle-publish = { id = "com.gradle.plugin-publish", version = "1.2.1" }
+kotlinter = { id = "org.jmailen.kotlinter", version = "4.2.0" }
