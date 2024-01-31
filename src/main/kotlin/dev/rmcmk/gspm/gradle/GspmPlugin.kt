@@ -4,18 +4,19 @@ import dev.rmcmk.gspm.git.SubmoduleDefinition
 import dev.rmcmk.gspm.gradle.module.GradleModule
 import dev.rmcmk.gspm.gradle.module.GradleModuleBuilder
 import dev.rmcmk.gspm.gradle.module.GradleModuleToolingPlugin
-import org.gradle.api.Plugin
-import org.gradle.api.initialization.Settings
-import org.gradle.api.initialization.dsl.VersionCatalogBuilder
-import org.gradle.kotlin.dsl.apply
-import org.gradle.kotlin.dsl.model
-import org.gradle.tooling.GradleConnector
 import java.util.Properties
 import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createTempFile
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.writeText
+import org.gradle.api.Plugin
+import org.gradle.api.initialization.Settings
+import org.gradle.api.initialization.dsl.VersionCatalogBuilder
+import org.gradle.api.plugins.PluginInstantiationException
+import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.model
+import org.gradle.tooling.GradleConnector
 
 /**
  * A plugin enables first-class Gradle support for Git submodules.
@@ -67,15 +68,16 @@ class GspmPlugin : Plugin<Settings> {
 
         SubmoduleDefinition.fromFile(file).forEach { submodule ->
             val path = Path(root, submodule.path)
-            val temp = createTempFile(path, "gradle-init", ".gradle").apply {
-                writeText(createInitScript())
+            val temp =
+                createTempFile(path, "gradle-init", ".gradle").apply {
+                    writeText(createInitScript())
 
-                // Mark this file for deletion on JVM exit.
-                // Unsure if this is appropriate, as this plugin is always ran inside a Gradle daemon,
-                // which can be a long-lived process and has the potential to create a lot of temp files
-                // that are seldom deleted. We'll keep it anyway and aggressively delete when we're done also.
-                toFile().deleteOnExit()
-            }
+                    // Mark this file for deletion on JVM exit.
+                    // Unsure if this is appropriate, as this plugin is always ran inside a Gradle daemon,
+                    // which can be a long-lived process and has the potential to create a lot of temp files
+                    // that are seldom deleted. We'll keep it anyway and aggressively delete when we're done also.
+                    toFile().deleteOnExit()
+                }
 
             try {
                 GradleConnector.newConnector().forProjectDirectory(path.toFile()).connect().use { connection ->
