@@ -23,6 +23,13 @@ import kotlin.io.path.writeText
  * @author <a href="http://github.com/klepto">Augustinas R.</a>
  */
 class GspmPlugin : Plugin<Settings> {
+    /** The properties file containing the coordinate information for this plugin. */
+    private val properties by lazy {
+        javaClass.classLoader.getResourceAsStream("coordinate.properties").use {
+            Properties().apply { load(it) }
+        }
+    }
+
     override fun apply(target: Settings) {
         target.configureSubmodules()
         target.applyPlugins()
@@ -130,17 +137,31 @@ class GspmPlugin : Plugin<Settings> {
      *
      * @receiver The settings to create the initialization script for.
      */
-    private fun Settings.createInitScript(): String {
-        val coordinate = gradle.rootProject.run { "$group:$name:$version" }
+    private fun createInitScript(): String {
+        val coordinate = "${getProperty("group")}:${getProperty("name")}:${getProperty("version")}"
         val klass = GradleModuleToolingPlugin::class
         return """
             import ${klass.qualifiedName}
             initscript {
-                repositories { mavenCentral() }
+                repositories {
+                    mavenCentral()
+                    maven { url 'https://jitpack.io' }
+                }
                 dependencies { classpath '$coordinate' }
             }
             allprojects { apply plugin: ${klass.simpleName} }
             """.trimIndent()
+    }
+
+    /**
+     * Returns the property value for the given [key].
+     *
+     * @param key The key to retrieve the value for.
+     * @return The value for the given [key].
+     * @throws IllegalStateException If the property for the given [key] does not exist.
+     */
+    private fun getProperty(key: String): String {
+        return properties.getProperty(key) ?: error("Property $key not found")
     }
 
     companion object {
