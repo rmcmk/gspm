@@ -2,8 +2,6 @@ package dev.rmcmk.gspm.git
 
 import com.github.vincentrussell.ini.Ini
 import java.nio.file.Path
-import java.nio.file.StandardOpenOption
-import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.notExists
 
@@ -47,7 +45,7 @@ data class SubmoduleDefinition(
                 throw IllegalArgumentException("Path must be a file: $path")
             }
 
-            val ini = Ini().apply { load(path.inputStream(StandardOpenOption.READ)) }
+            val ini = Ini().apply { load(path.toFile()) }
             return ini.sections.map {
                 val section = ini.getSection(it)
                 val valueOf = { key: String -> section[key].toString() }
