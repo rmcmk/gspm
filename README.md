@@ -82,11 +82,43 @@ it reaches a stable release, it will be published on the Gradle Plugin Hub. For
 now, you can access release candidate builds through JitPack. Make sure to
 configure the JitPack repository for plugins in your Gradle settings file.
 
+Example - (_settings.gradle.kts_):
+
+```kts
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        maven("https://jitpack.io")
+    }
+
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "gspm") {
+                useModule("com.github.rmcmk.gspm:gspm.gradle.plugin:${requested.version}")
+            }
+        }
+    }
+}
+
+plugins {
+    id("gspm") version "1.0.0-RC4"
+}
+```
+
 ## Non-Goals
 
 gspm does not aim to replicate features like `npm run outdated` or extensive
 versioning capabilities. Other tools are better suited for maintaining ideal
 dependency versions and checking for vulnerabilities.
+
+## Acknowledgements
+
+- [Augustinas R](https://github.com/klepto/) - Provided substantial research and
+  development, support, and the initial concept of the plugin.
+- [Foundry](https://github.com/foundry-rs/foundry) - Served as inspiration for
+  the plugin. Their work on Forge for the Solidity ecosystem has been
+  influential.
 
 ## Contributing
 
