@@ -7,7 +7,6 @@ import dev.rmcmk.gspm.gradle.submodule.SubmodulesSyncTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.tooling.model.kotlin.dsl.KotlinDslModelsParameters.PREPARATION_TASK_NAME
 
 /**
  * A WIP plugin that adds first-class support for Git submodules.
@@ -16,19 +15,8 @@ import org.gradle.tooling.model.kotlin.dsl.KotlinDslModelsParameters.PREPARATION
  */
 class GspmProjectPlugin : Plugin<Project> {
     override fun apply(target: Project) {
-        target.registerBuildScriptTask()
-
         target.register<SubmodulesListTask>()
         target.register<SubmodulesSyncTask>()
-    }
-
-    /**
-     * Registers [SubmodulesSyncTask] to be executed during buildscript phase
-     * of the current project context.
-     */
-    private fun Project.registerBuildScriptTask() {
-        val metadata = taskMetadata<SubmodulesSyncTask>()
-        tasks.named(PREPARATION_TASK_NAME).get().finalizedBy(metadata.name)
     }
 
     /**
