@@ -12,7 +12,7 @@ import javax.inject.Inject
  * @param factory The object factory. This is used to create various kinds of modelled properties.
  * @author Ryley Kimmel <me@rmcmk.dev>
  */
-class GspmExtension
+open class GspmExtension
     @Inject
     constructor(factory: ObjectFactory) {
         /** The name of the version catalog to use for the submodules. Default is "gspm". */
