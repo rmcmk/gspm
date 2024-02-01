@@ -31,6 +31,17 @@ dependencies {
 	}
 }
 
+configurations.configureEach {
+	if (isCanBeConsumed) {
+		attributes {
+			attribute(
+				GradlePluginApiVersion.GRADLE_PLUGIN_API_VERSION_ATTRIBUTE,
+				objects.named("8.5")
+			)
+		}
+	}
+}
+
 tasks.register<WriteProperties>("generateCoordinateProperties") {
 	sourceSets.main {
 		destinationFile = output.resourcesDir?.resolve("coordinate.properties")
