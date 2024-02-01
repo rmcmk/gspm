@@ -102,7 +102,7 @@ pluginManagement {
 }
 
 plugins {
-    id("gspm") version "1.0.0-RC4"
+    id("gspm") version "1.0.0-RC6"
 }
 ```
 
