@@ -32,10 +32,14 @@ class GspmPlugin : Plugin<Settings> {
         }
     }
 
-    override fun apply(target: Settings) {
-        target.configureSubmodules()
-        target.applyPlugins()
-    }
+    override fun apply(target: Settings) =
+        target.run {
+            val extension = GspmExtension.fromSettings(this)
+            gradle.settingsEvaluated {
+                configureSubmodules(extension)
+                applyPlugins()
+            }
+        }
 
     /**
      * Applies the [GspmProjectPlugin] to the root project. This plugin is required to configure the submodules as
@@ -45,10 +49,8 @@ class GspmPlugin : Plugin<Settings> {
      * @see GspmProjectPlugin
      */
     private fun Settings.applyPlugins() {
-        gradle.settingsEvaluated {
-            gradle.rootProject {
-                plugins.apply(GspmProjectPlugin::class)
-            }
+        gradle.rootProject {
+            plugins.apply(GspmProjectPlugin::class)
         }
     }
 
@@ -58,24 +60,26 @@ class GspmPlugin : Plugin<Settings> {
      * submodule's build script and extracting information required to construct a composite build and versioning
      * information for the version catalog.
      *
+     * @param extension The extension to configure the submodules for.
      * @receiver The settings to configure the submodules for.
      * @see createInitScript
      */
     @Suppress("UnstableApiUsage")
-    private fun Settings.configureSubmodules() {
+    private fun Settings.configureSubmodules(extension: GspmExtension) {
         val root = layout.rootDirectory.toString()
         val file = Path(root, GIT_MODULES_FILE_NAME)
 
         SubmoduleDefinition.fromFile(file).forEach { submodule ->
             val path = Path(root, submodule.path)
-            val temp =
+            val initScript =
                 createTempFile(path, "gradle-init", ".gradle").apply {
                     writeText(createInitScript())
 
-                    // Mark this file for deletion on JVM exit.
-                    // Unsure if this is appropriate, as this plugin is always ran inside a Gradle daemon,
-                    // which can be a long-lived process and has the potential to create a lot of temp files
-                    // that are seldom deleted. We'll keep it anyway and aggressively delete when we're done also.
+                    // This file is marked for deletion on JVM exit. While this approach may be suitable, it's worth
+                    // noting that this plugin is consistently executed within a long-lived Gradle daemon. This setup
+                    // has the potential to accumulate numerous temporary files that might not be promptly deleted.
+                    // Despite this consideration, we've opted to retain the deletion mechanism and ensure aggressive
+                    // cleanup upon completion.
                     toFile().deleteOnExit()
                 }
 
@@ -83,7 +87,7 @@ class GspmPlugin : Plugin<Settings> {
                 GradleConnector.newConnector().forProjectDirectory(path.toFile()).connect().use { connection ->
                     val module =
                         connection.model(GradleModule::class)
-                            .withArguments("--init-script", temp.absolutePathString())
+                            .withArguments("--init-script", initScript.absolutePathString())
                             .setStandardOutput(System.out)
                             .setStandardError(System.err)
                             .get()
@@ -92,12 +96,12 @@ class GspmPlugin : Plugin<Settings> {
                     includeBuild(module.path)
 
                     // Create a version catalog for the submodule and its children.
-                    createVersionCatalog(module)
+                    createVersionCatalog(module, extension)
                 }
             } catch (cause: Exception) {
                 throw PluginInstantiationException("Failed to configure submodule at $path", cause)
             } finally {
-                temp.deleteIfExists()
+                initScript.deleteIfExists()
             }
         }
     }
@@ -107,9 +111,11 @@ class GspmPlugin : Plugin<Settings> {
      *
      * @param module The module to create the version catalog for.
      */
-    private fun Settings.createVersionCatalog(module: GradleModule) {
-        // TODO(rmcmk): `gspm` should be configurable, collisions are possible
-        dependencyResolutionManagement.versionCatalogs.create("gspm") {
+    private fun Settings.createVersionCatalog(
+        module: GradleModule,
+        extension: GspmExtension,
+    ) {
+        dependencyResolutionManagement.versionCatalogs.create(extension.versionCatalogName.get()) {
             addLibrary(module)
             module.children.forEach { addLibrary(it) }
         }
@@ -122,7 +128,7 @@ class GspmPlugin : Plugin<Settings> {
      */
     private fun VersionCatalogBuilder.addLibrary(module: GradleModule) =
         module.coordinate.run {
-            library(name, group, name).version(version)
+            library(artifact, group, artifact).version(version)
         }
 
     /**

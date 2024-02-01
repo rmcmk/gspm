@@ -8,8 +8,8 @@ import java.io.Serializable
  * @author Ryley Kimmel <me@rmcmk.dev>
  */
 interface GradleModuleCoordinate {
-    /** The name of this module. */
-    val name: String
+    /** The artifact name of this module. */
+    val artifact: String
 
     /** The group of this module. */
     val group: String
@@ -26,7 +26,7 @@ interface GradleModuleCoordinate {
  * @author Ryley Kimmel <me@rmcmk.dev>
  */
 data class DefaultGradleModuleCoordinate(
-    override val name: String,
+    override val artifact: String,
     override val group: String,
     override val version: String,
 ) : GradleModuleCoordinate, Serializable

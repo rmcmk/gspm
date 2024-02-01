@@ -14,11 +14,10 @@ annotation class TaskMetadata(val name: String, val description: String)
  * Retrieves [TaskMetadata] annotation of task of type [T].
  *
  * @return the task metadata
- * @throws IllegalStateException If the [TaskMetadata] annotation is not
- *     found on [T].
+ * @throws IllegalStateException If the [TaskMetadata] annotation is not found on [T].
  */
 inline fun <reified T : Task> taskMetadata(): TaskMetadata {
     val klass = T::class
     return klass.findAnnotation<TaskMetadata>()
-        ?: throw IllegalStateException("TaskMetadata annotation not found on ${klass.simpleName}")
+        ?: error("TaskMetadata annotation not found on ${klass.simpleName}")
 }

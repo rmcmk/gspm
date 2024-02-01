@@ -52,7 +52,7 @@ class GradleModuleBuilder : ToolingModelBuilder {
      */
     private fun Project.buildCoordinate(): GradleModuleCoordinate {
         return DefaultGradleModuleCoordinate(
-            name,
+            artifact = name,
             group.toString(),
             version.toString(),
         )
