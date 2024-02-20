@@ -52,7 +52,7 @@ abstract class GspmPlugin : Plugin<Settings> {
             }
 
         val gitModules = target.layout.rootDirectory.file(GspmProperties.GIT_MODULES_FILE_NAME)
-        properties = GspmProperties(target, gitModules)
+        properties = GspmProperties(gitModules)
 
         with(target.gradle) {
             settingsEvaluated {
