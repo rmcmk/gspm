@@ -3,11 +3,11 @@ package dev.rmcmk.gspm.gradle.module
 import java.io.Serializable
 
 /**
- * Represents a Gradle module coordinate. (GAV Coordinate Notation)
+ * Represents a serializable Gradle module coordinate. (GAV Coordinate Notation)
  *
  * @author Ryley Kimmel <me@rmcmk.dev>
  */
-interface GradleModuleCoordinate {
+interface GradleModuleCoordinate : Serializable {
     /** The artifact name of this module. */
     val artifact: String
 
@@ -19,9 +19,8 @@ interface GradleModuleCoordinate {
 }
 
 /**
- * The default serializable implementation of [GradleModuleCoordinate].
+ * The default implementation of [GradleModuleCoordinate].
  *
- * @see Serializable
  * @see GradleModuleCoordinate
  * @author Ryley Kimmel <me@rmcmk.dev>
  */
@@ -29,4 +28,4 @@ data class DefaultGradleModuleCoordinate(
     override val artifact: String,
     override val group: String,
     override val version: String,
-) : GradleModuleCoordinate, Serializable
+) : GradleModuleCoordinate

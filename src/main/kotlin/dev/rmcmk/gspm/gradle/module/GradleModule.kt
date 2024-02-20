@@ -4,11 +4,11 @@ import org.gradle.tooling.model.Model
 import java.io.Serializable
 
 /**
- * Represents a Gradle module.
+ * Represents a serializable Gradle module.
  *
  * @author Ryley Kimmel <me@rmcmk.dev>
  */
-interface GradleModule : Model {
+interface GradleModule : Model, Serializable {
     /** The absolute path to the module. */
     val path: String
 
@@ -20,14 +20,13 @@ interface GradleModule : Model {
 }
 
 /**
- * The default serializable implementation of [GradleModule].
+ * The default implementation of [GradleModule].
  *
  * @see GradleModule
- * @see Serializable
  * @author Ryley Kimmel <me@rmcmk.dev>
  */
 data class DefaultGradleModule(
     override val path: String,
     override val coordinate: GradleModuleCoordinate,
     override val children: List<GradleModule>,
-) : GradleModule, Serializable
+) : GradleModule

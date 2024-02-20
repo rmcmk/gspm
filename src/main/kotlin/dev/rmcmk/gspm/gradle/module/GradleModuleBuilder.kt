@@ -12,7 +12,7 @@ import org.gradle.tooling.provider.model.ToolingModelBuilder
  */
 class GradleModuleBuilder : ToolingModelBuilder {
     override fun canBuild(modelName: String): Boolean {
-        return modelName == MODEL_NAME
+        return modelName == GradleModule::class.java.name
     }
 
     override fun buildAll(
@@ -56,10 +56,5 @@ class GradleModuleBuilder : ToolingModelBuilder {
             group.toString(),
             version.toString(),
         )
-    }
-
-    companion object {
-        /** The name of the model this builder builds. */
-        val MODEL_NAME: String = GradleModule::class.java.name
     }
 }
