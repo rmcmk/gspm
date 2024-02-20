@@ -17,6 +17,7 @@ import kotlin.io.path.absolutePathString
 import kotlin.io.path.createTempFile
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.writeText
+import org.gradle.kotlin.dsl.create
 
 /**
  * A plugin enables first-class Gradle support for Git submodules.
@@ -34,7 +35,10 @@ class GspmPlugin : Plugin<Settings> {
 
     override fun apply(target: Settings) =
         target.run {
-            val extension = GspmExtension.fromSettings(this)
+            val extension = extensions.create<GspmExtension>("gspm").apply {
+                versionCatalogName.convention("gspm")
+            }
+
             gradle.settingsEvaluated {
                 configureSubmodules(extension)
                 applyPlugins()

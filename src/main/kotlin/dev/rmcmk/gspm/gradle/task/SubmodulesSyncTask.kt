@@ -1,4 +1,4 @@
-package dev.rmcmk.gspm.gradle.submodule
+package dev.rmcmk.gspm.gradle.task
 
 import dev.rmcmk.gspm.gradle.api.TaskMetadata
 import org.gradle.api.DefaultTask

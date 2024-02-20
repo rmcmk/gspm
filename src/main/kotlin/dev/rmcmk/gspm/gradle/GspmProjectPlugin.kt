@@ -2,8 +2,8 @@ package dev.rmcmk.gspm.gradle
 
 import dev.rmcmk.gspm.gradle.api.TaskMetadata
 import dev.rmcmk.gspm.gradle.api.taskMetadata
-import dev.rmcmk.gspm.gradle.submodule.SubmodulesListTask
-import dev.rmcmk.gspm.gradle.submodule.SubmodulesSyncTask
+import dev.rmcmk.gspm.gradle.task.SubmodulesListTask
+import dev.rmcmk.gspm.gradle.task.SubmodulesSyncTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
