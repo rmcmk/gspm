@@ -28,4 +28,6 @@ data class DefaultGradleModuleCoordinate(
     override val artifact: String,
     override val group: String,
     override val version: String,
-) : GradleModuleCoordinate
+) : GradleModuleCoordinate {
+    override fun toString(): String = "$group:$artifact:$version"
+}

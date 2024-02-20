@@ -1,9 +1,10 @@
 package dev.rmcmk.gspm.git
 
 import com.github.vincentrussell.ini.Ini
-import java.nio.file.Path
-import kotlin.io.path.isRegularFile
-import kotlin.io.path.notExists
+import org.gradle.api.file.RegularFile
+import org.gradle.api.initialization.Settings
+import java.io.File
+import java.security.MessageDigest
 
 /**
  * Represents submodule definition entry as defined in `.gitmodules`.
@@ -30,38 +31,84 @@ data class SubmoduleDefinition(
     val updateMode: SubmoduleUpdateMode?,
     val ignoreMode: SubmoduleIgnoreMode?,
 ) {
-    companion object {
-        /**
-         * Parses the given [path] into a list of [SubmoduleDefinition]s.
-         *
-         * @return A list of [SubmoduleDefinition]s from the given [path].
-         * @throws IllegalArgumentException If the given [path] is not a regular
-         */
-        fun fromFile(path: Path): List<SubmoduleDefinition> {
-            if (path.notExists()) {
-                return emptyList()
-            }
-            if (!path.isRegularFile()) {
-                throw IllegalArgumentException("Path must be a file: $path")
-            }
+    /**
+     * Returns the [path] of this [SubmoduleDefinition] relative to the [Settings]'s root directory.
+     *
+     * @param settings The settings to use for the path.
+     * @return The path of this [SubmoduleDefinition] relative to the [Settings]'s root directory.
+     */
+    fun relative(settings: Settings) = settings.rootDir.resolve(path)
 
-            val ini = Ini().apply { load(path.toFile()) }
-            return ini.sections.map {
-                val section = ini.getSection(it)
-                val valueOf = { key: String -> section[key].toString() }
+    /**
+     * Returns a deterministic temporary file name for this [SubmoduleDefinition].
+     *
+     * @return The temporary file name.
+     */
+    fun tempFileName(): String {
+        val hashed = MessageDigest.getInstance("SHA-256").digest("$name-$path-$url".toByteArray())
+        return hashed.joinToString("") { "%02x".format(it) }
+    }
 
-                SubmoduleDefinition(
-                    name = valueOf("name"),
-                    path = valueOf("path"),
-                    url = valueOf("url"),
-                    fetchRecurseSubmodules = valueOf("fetchRecurseSubmodules").toBoolean(),
-                    shallow = valueOf("shallow").toBoolean(),
-                    branchName = valueOf("branch"),
-                    updateMode = section["update"]?.let { v -> SubmoduleUpdateMode.fromString(v.toString()) },
-                    ignoreMode = section["ignore"]?.let { v -> SubmoduleIgnoreMode.fromString(v.toString()) },
-                )
+    /**
+     * Returns the init script for this [SubmoduleDefinition]. This function makes an effort to reuse the existing init
+     * script if it exists and the content matches.
+     *
+     * @param settings The settings to use for the init script.
+     * @param contents The contents of the init script.
+     * @return The init script for this [SubmoduleDefinition].
+     */
+    fun getInitScript(
+        settings: Settings,
+        contents: String,
+    ): File {
+        val initScript = relative(settings).resolve("${tempFileName()}-init.gradle")
+
+        // If the script exists and the content matches, return the script.
+        if (initScript.exists()) {
+            val content = initScript.readText()
+            if (content == contents) {
+                return initScript
             }
         }
+
+        // Otherwise, this file either doesn't exist or the content doesn't match.
+        // Write the content and return the script.
+        initScript.writeText(contents)
+        return initScript
+    }
+}
+
+/**
+ * Parses the `.gitmodules` file into a list of [SubmoduleDefinition]s.
+ *
+ * @return The parsed submodule definitions.
+ * @receiver The file to parse.
+ * @throws IllegalArgumentException If the file is not a file.
+ * @see SubmoduleDefinition
+ */
+fun RegularFile.parseSubmodules(): List<SubmoduleDefinition> {
+    val file = asFile
+    if (!file.exists()) {
+        return emptyList()
+    }
+
+    require(file.isFile) { "Path must be a file: $file" }
+
+    val ini = Ini().apply { load(file) }
+    return ini.sections.map {
+        val section = ini.getSection(it)
+        val valueOf = { key: String -> section[key].toString() }
+
+        SubmoduleDefinition(
+            name = valueOf("name"),
+            path = valueOf("path"),
+            url = valueOf("url"),
+            fetchRecurseSubmodules = valueOf("fetchRecurseSubmodules").toBoolean(),
+            shallow = valueOf("shallow").toBoolean(),
+            branchName = valueOf("branch"),
+            updateMode = section["update"]?.let { v -> SubmoduleUpdateMode.fromString(v.toString()) },
+            ignoreMode = section["ignore"]?.let { v -> SubmoduleIgnoreMode.fromString(v.toString()) },
+        )
     }
 }
 
@@ -75,28 +122,26 @@ data class SubmoduleDefinition(
  */
 enum class SubmoduleIgnoreMode {
     /**
-     * The submodule will never be considered modified (but will nonetheless
-     * show up in the output of status and commit when it has been staged).
+     * The submodule will never be considered modified (but will nonetheless show up in the output of status and commit
+     * when it has been staged).
      */
     ALL,
 
     /**
-     * All changes to the submodule’s work tree will be ignored, only committed
-     * differences between the HEAD of the submodule and its recorded state in
-     * the superproject are taken into account.
+     * All changes to the submodule’s work tree will be ignored, only committed differences between the HEAD of the
+     * submodule and its recorded state in the superproject are taken into account.
      */
     DIRTY,
 
     /**
-     * Only untracked files in submodules will be ignored. Committed
-     * differences and modifications to tracked files will show up.
+     * Only untracked files in submodules will be ignored. Committed differences and modifications to tracked files will
+     * show up.
      */
     UNTRACKED,
 
     /**
-     * No modifications to submodules are ignored, all of committed
-     * differences, and modifications to tracked and untracked files are shown.
-     * This is the default option.
+     * No modifications to submodules are ignored, all of committed differences, and modifications to tracked and
+     * untracked files are shown. This is the default option.
      */
     NONE,
 
@@ -132,30 +177,19 @@ enum class SubmoduleIgnoreMode {
  */
 enum class SubmoduleUpdateMode {
     /**
-     * The commit recorded in the superproject will be checked out in the
-     * submodule on a detached HEAD. If --force is specified, the submodule
-     * will be checked out (using git checkout --force), even if the commit
-     * specified in the index of the containing repository already matches the
-     * commit checked out in the submodule.
+     * The commit recorded in the superproject will be checked out in the submodule on a detached HEAD. If --force is
+     * specified, the submodule will be checked out (using git checkout --force), even if the commit specified in the
+     * index of the containing repository already matches the commit checked out in the submodule.
      */
     CHECKOUT,
 
-    /**
-     * The current branch of the submodule will be rebased onto the commit
-     * recorded in the superproject.
-     */
+    /** The current branch of the submodule will be rebased onto the commit recorded in the superproject. */
     REBASE,
 
-    /**
-     * The commit recorded in the superproject will be merged into the current
-     * branch in the submodule.
-     */
+    /** The commit recorded in the superproject will be merged into the current branch in the submodule. */
     MERGE,
 
-    /**
-     * The submodule is not updated. This update procedure is not allowed on
-     * the command line.
-     */
+    /** The submodule is not updated. This update procedure is not allowed on the command line. */
     NONE,
 
     ;
