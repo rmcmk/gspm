@@ -7,7 +7,7 @@ import dev.rmcmk.gspm.gradle.module.GradleModuleToolingPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import org.gradle.api.initialization.dsl.VersionCatalogBuilder
-import org.gradle.api.plugins.PluginInstantiationException
+import org.gradle.api.logging.Logging
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.model
@@ -20,6 +20,9 @@ import org.gradle.tooling.GradleConnector
  * @author <a href="http://github.com/klepto">Augustinas R.</a>
  */
 abstract class GspmPlugin : Plugin<Settings> {
+    /** The logger for this [GspmPlugin]. */
+    private val logger = Logging.getLogger(GspmPlugin::class.java)
+
     /** The properties of this [GspmPlugin]. */
     private lateinit var properties: GspmProperties
 
@@ -52,7 +55,15 @@ abstract class GspmPlugin : Plugin<Settings> {
             }
 
         val gitModules = target.layout.rootDirectory.file(GspmProperties.GIT_MODULES_FILE_NAME)
-        properties = GspmProperties(gitModules)
+        properties =
+            GspmProperties(gitModules).apply {
+                if (submodules.isEmpty()) {
+                    logger.lifecycle("No submodules found. Skipping configuration.")
+                    return
+                }
+
+                logger.lifecycle("Configuring ${submodules.size} submodules...")
+            }
 
         with(target.gradle) {
             settingsEvaluated {
@@ -60,6 +71,8 @@ abstract class GspmPlugin : Plugin<Settings> {
 
                 rootProject {
                     plugins.apply(GspmProjectPlugin::class)
+
+                    logger.lifecycle("Done!")
                 }
             }
         }
@@ -79,6 +92,7 @@ abstract class GspmPlugin : Plugin<Settings> {
             val relative = submodule.relative(this)
             val initScript = submodule.getInitScript(this, initScriptContents)
 
+            logger.lifecycle("Configuring submodule at $relative")
             try {
                 GradleConnector.newConnector().forProjectDirectory(relative).connect().use { connection ->
                     val module =
@@ -95,7 +109,9 @@ abstract class GspmPlugin : Plugin<Settings> {
                     createVersionCatalog(module, extension)
                 }
             } catch (cause: Exception) {
-                throw PluginInstantiationException("Failed to configure submodule at $relative", cause)
+                logger.error("Failed to configure submodule at $relative", cause)
+            } finally {
+                initScript.delete()
             }
         }
     }
@@ -123,5 +139,6 @@ abstract class GspmPlugin : Plugin<Settings> {
     private fun VersionCatalogBuilder.addLibrary(module: GradleModule) =
         module.coordinate.run {
             library(artifact, group, artifact).version(version)
+            logger.lifecycle("Added $this to version catalog")
         }
 }
