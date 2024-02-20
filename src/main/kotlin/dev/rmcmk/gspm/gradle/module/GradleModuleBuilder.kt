@@ -21,7 +21,7 @@ class GradleModuleBuilder : ToolingModelBuilder {
     ): Any {
         return DefaultGradleModule(
             project.projectDir.path,
-            project.buildCoordinate(),
+            project.buildCoordinate(project),
             project.buildChildModules(),
         )
     }
@@ -37,7 +37,7 @@ class GradleModuleBuilder : ToolingModelBuilder {
             listOf(
                 DefaultGradleModule(
                     subproject.projectDir.path,
-                    subproject.buildCoordinate(),
+                    subproject.buildCoordinate(this),
                     subproject.buildChildModules(),
                 ),
             )
@@ -50,11 +50,18 @@ class GradleModuleBuilder : ToolingModelBuilder {
      * @return The [GradleModuleCoordinate] of the project.
      * @receiver The project to build the [GradleModuleCoordinate] of.
      */
-    private fun Project.buildCoordinate(): GradleModuleCoordinate {
+    private fun Project.buildCoordinate(root: Project): GradleModuleCoordinate {
+        val version =
+            if (this == root || version.toString() == "unspecified") {
+                root.version.toString()
+            } else {
+                version.toString()
+            }
+
         return DefaultGradleModuleCoordinate(
             artifact = name,
             group.toString(),
-            version.toString(),
+            version,
         )
     }
 }

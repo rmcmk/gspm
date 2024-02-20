@@ -58,11 +58,11 @@ abstract class GspmPlugin : Plugin<Settings> {
         properties =
             GspmProperties(gitModules).apply {
                 if (submodules.isEmpty()) {
-                    logger.lifecycle("No submodules found. Skipping configuration.")
+                    logger.lifecycle("[gspm]: No submodules found. Skipping configuration.")
                     return
                 }
 
-                logger.lifecycle("Configuring ${submodules.size} submodules...")
+                logger.lifecycle("[gspm]: Configuring ${submodules.size} submodules...")
             }
 
         with(target.gradle) {
@@ -71,8 +71,6 @@ abstract class GspmPlugin : Plugin<Settings> {
 
                 rootProject {
                     plugins.apply(GspmProjectPlugin::class)
-
-                    logger.lifecycle("Done!")
                 }
             }
         }
@@ -92,7 +90,7 @@ abstract class GspmPlugin : Plugin<Settings> {
             val relative = submodule.relative(this)
             val initScript = submodule.getInitScript(this, initScriptContents)
 
-            logger.lifecycle("Configuring submodule at $relative")
+            logger.lifecycle("[gspm]: Configuring submodule at $relative")
             try {
                 GradleConnector.newConnector().forProjectDirectory(relative).connect().use { connection ->
                     val module =
@@ -109,7 +107,7 @@ abstract class GspmPlugin : Plugin<Settings> {
                     createVersionCatalog(module, extension)
                 }
             } catch (cause: Exception) {
-                logger.error("Failed to configure submodule at $relative", cause)
+                logger.error("[gspm]: Failed to configure submodule at $relative", cause)
             } finally {
                 initScript.delete()
             }
@@ -139,6 +137,6 @@ abstract class GspmPlugin : Plugin<Settings> {
     private fun VersionCatalogBuilder.addLibrary(module: GradleModule) =
         module.coordinate.run {
             library(artifact, group, artifact).version(version)
-            logger.lifecycle("Added $this to version catalog")
+            logger.lifecycle("[gspm]: Added $this to version catalog")
         }
 }
