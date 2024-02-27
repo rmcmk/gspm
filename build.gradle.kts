@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.rmcmk.gspm"
-version = "1.0.0-RC12"
+version = "1.0.0-RC13"
 
 dependencies {
     implementation(libs.java.ini.parser)
