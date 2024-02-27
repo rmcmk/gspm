@@ -86,23 +86,23 @@ Example - (_settings.gradle.kts_):
 
 ```kts
 pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-        maven("https://jitpack.io")
-    }
+	repositories {
+		mavenCentral()
+		gradlePluginPortal()
+		maven("https://jitpack.io")
+	}
 
-    resolutionStrategy {
-        eachPlugin {
-            if (requested.id.id == "gspm") {
-                useModule("com.github.rmcmk.gspm:gspm.gradle.plugin:${requested.version}")
-            }
-        }
-    }
+	resolutionStrategy {
+		eachPlugin {
+			if (requested.id.id == "gspm") {
+				useModule("com.github.rmcmk.gspm:gspm.gradle.plugin:${requested.version}")
+			}
+		}
+	}
 }
 
 plugins {
-    id("gspm") version "1.0.0-RC12"
+    id("gspm") version "1.0.0-RC15"
 }
 ```
 

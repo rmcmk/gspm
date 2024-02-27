@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.rmcmk.gspm"
-version = "1.0.0-RC14"
+version = "1.0.0-RC15"
 
 plugins.withType<KotlinPluginWrapper> {
     kotlin {
