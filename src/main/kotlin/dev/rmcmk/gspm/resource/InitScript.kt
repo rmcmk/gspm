@@ -1,10 +1,9 @@
 package dev.rmcmk.gspm.resource
 
 import dev.rmcmk.gradle.gmvmb.GmvmbPlugin
+import java.io.File
 
-data object InitScript : Resource {
-    private val GMVMB_PLUGIN_CLASS = GmvmbPlugin::class
-
+class InitScript(override val file: File) : Resource() {
     override val fileName = "init.gradle.kts"
     override val content =
         """
@@ -25,4 +24,8 @@ data object InitScript : Resource {
 
         allprojects { apply<${GMVMB_PLUGIN_CLASS.simpleName}>() }
         """.trimIndent()
+
+    companion object {
+        private val GMVMB_PLUGIN_CLASS = GmvmbPlugin::class
+    }
 }

@@ -1,6 +1,8 @@
 package dev.rmcmk.gspm.resource
 
-data object GitIgnore : Resource {
+import java.io.File
+
+class GitIgnore(override val file: File) : Resource() {
     override val fileName = ".gitignore"
     override val content =
         """

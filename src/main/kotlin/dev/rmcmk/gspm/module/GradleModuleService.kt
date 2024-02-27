@@ -43,7 +43,7 @@ class GradleModuleService(private val store: Store, private val gspm: GspmExtens
                     val stderr = ByteArrayOutputStream()
                     val module =
                         it.model(GradleModule::class)
-                            .withArguments("--init-script", store.initScript.absolutePath)
+                            .withArguments("--init-script", store.initScript.path)
                             .setStandardOutput(stdout)
                             .setStandardError(stderr)
                             .get()

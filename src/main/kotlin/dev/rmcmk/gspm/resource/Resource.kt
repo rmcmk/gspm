@@ -3,17 +3,20 @@ package dev.rmcmk.gspm.resource
 import dev.rmcmk.gspm.checksumMatches
 import java.io.File
 
-sealed interface Resource {
-    val fileName: String
-    val content: String
+abstract class Resource {
+    init {
+        sync()
+    }
 
-    companion object {
-        inline operator fun <reified T : Resource> invoke(file: File) {
-            val resource = T::class.objectInstance ?: error("Resource must be a `data object`")
-            val content = resource.content
-            if (!file.checksumMatches(content)) {
-                file.writeText(content)
-            }
+    abstract val file: File
+    abstract val fileName: String
+    abstract val content: String
+
+    val path: String get() = file.absolutePath
+
+    fun sync() {
+        if (!file.checksumMatches(content)) {
+            file.writeText(content)
         }
     }
 }
