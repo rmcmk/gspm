@@ -1,4 +1,4 @@
-package dev.rmcmk.gspm.gradle.api
+package dev.rmcmk.gradle.api
 
 import org.gradle.api.Task
 import kotlin.reflect.full.findAnnotation

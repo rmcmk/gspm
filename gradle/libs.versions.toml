@@ -1,5 +1,6 @@
 [libraries]
 java-ini-parser = { module = "com.github.vincentrussell:java-ini-parser", version = "1.6" }
+gmvmb = { module = "com.github.rmcmk.gmvmb:gmvmb", version = "1.0.0-RC1" }
 
 [plugins]
 gradle-publish = { id = "com.gradle.plugin-publish", version = "1.2.1" }

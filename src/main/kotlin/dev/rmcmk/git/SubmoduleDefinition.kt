@@ -1,10 +1,8 @@
-package dev.rmcmk.gspm.git
+package dev.rmcmk.git
 
 import com.github.vincentrussell.ini.Ini
-import org.gradle.api.file.RegularFile
-import org.gradle.api.initialization.Settings
+import org.gradle.api.GradleException
 import java.io.File
-import java.security.MessageDigest
 
 /**
  * Represents submodule definition entry as defined in `.gitmodules`.
@@ -23,92 +21,51 @@ import java.security.MessageDigest
  */
 data class SubmoduleDefinition(
     val name: String,
-    val path: String,
+    val path: File,
     val url: String,
     val fetchRecurseSubmodules: Boolean,
     val shallow: Boolean,
     val branchName: String,
     val updateMode: SubmoduleUpdateMode?,
     val ignoreMode: SubmoduleIgnoreMode?,
-) {
-    /**
-     * Returns the [path] of this [SubmoduleDefinition] relative to the [Settings]'s root directory.
-     *
-     * @param settings The settings to use for the path.
-     * @return The path of this [SubmoduleDefinition] relative to the [Settings]'s root directory.
-     */
-    fun relative(settings: Settings) = settings.rootDir.resolve(path)
-
-    /**
-     * Returns a deterministic temporary file name for this [SubmoduleDefinition].
-     *
-     * @return The temporary file name.
-     */
-    fun tempFileName(): String {
-        val hashed = MessageDigest.getInstance("SHA-256").digest("$name-$path-$url".toByteArray())
-        return hashed.joinToString("") { "%02x".format(it) }
-    }
-
-    /**
-     * Returns the init script for this [SubmoduleDefinition]. This function makes an effort to reuse the existing init
-     * script if it exists and the content matches.
-     *
-     * @param settings The settings to use for the init script.
-     * @param contents The contents of the init script.
-     * @return The init script for this [SubmoduleDefinition].
-     */
-    fun getInitScript(
-        settings: Settings,
-        contents: String,
-    ): File {
-        val initScript = relative(settings).resolve("${tempFileName()}-init.gradle")
-
-        // If the script exists and the content matches, return the script.
-        if (initScript.exists()) {
-            val content = initScript.readText()
-            if (content == contents) {
-                return initScript
-            }
-        }
-
-        // Otherwise, this file either doesn't exist or the content doesn't match.
-        // Write the content and return the script.
-        initScript.writeText(contents)
-        return initScript
-    }
-}
+)
 
 /**
  * Parses the `.gitmodules` file into a list of [SubmoduleDefinition]s.
  *
+ * @param root The root directory of the `.gitmodules` file.
  * @return The parsed submodule definitions.
  * @receiver The file to parse.
- * @throws IllegalArgumentException If the file is not a file.
- * @see SubmoduleDefinition
+ * @throws GradleException If the file does not exist or is not a file.
  */
-fun RegularFile.parseSubmodules(): List<SubmoduleDefinition> {
-    val file = asFile
-    if (!file.exists()) {
-        return emptyList()
+fun File.parseSubmoduleDefinitions(root: File): Map<String, SubmoduleDefinition> {
+    if (!exists()) {
+        throw GradleException("Unable to initialize gspm. File does not exist: $absolutePath")
     }
 
-    require(file.isFile) { "Path must be a file: $file" }
+    if (!isFile) {
+        throw GradleException("Unable to initialize gspm. $absolutePath is not a file.")
+    }
 
-    val ini = Ini().apply { load(file) }
-    return ini.sections.map {
+    val ini = Ini().apply { load(this@parseSubmoduleDefinitions) }
+    return ini.sections.associate {
         val section = ini.getSection(it)
-        val valueOf = { key: String -> section[key].toString() }
+        val name = it.removePrefix("submodule ").replace("\"", "")
 
-        SubmoduleDefinition(
-            name = valueOf("name"),
-            path = valueOf("path"),
-            url = valueOf("url"),
-            fetchRecurseSubmodules = valueOf("fetchRecurseSubmodules").toBoolean(),
-            shallow = valueOf("shallow").toBoolean(),
-            branchName = valueOf("branch"),
-            updateMode = section["update"]?.let { v -> SubmoduleUpdateMode.fromString(v.toString()) },
-            ignoreMode = section["ignore"]?.let { v -> SubmoduleIgnoreMode.fromString(v.toString()) },
-        )
+        val valueOf = { key: String -> section[key].toString() }
+        val path = root.resolve(valueOf("path"))
+
+        name to
+            SubmoduleDefinition(
+                name = name,
+                path = path,
+                url = valueOf("url"),
+                fetchRecurseSubmodules = valueOf("fetchRecurseSubmodules").toBoolean(),
+                shallow = valueOf("shallow").toBoolean(),
+                branchName = valueOf("branch"),
+                updateMode = section["update"]?.let { v -> SubmoduleUpdateMode.fromString(v.toString()) },
+                ignoreMode = section["ignore"]?.let { v -> SubmoduleIgnoreMode.fromString(v.toString()) },
+            )
     }
 }
 

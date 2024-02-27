@@ -1,4 +1,4 @@
-package dev.rmcmk.gspm.gradle.task
+package dev.rmcmk.gspm.task
 
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input

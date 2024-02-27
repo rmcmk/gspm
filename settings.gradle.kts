@@ -2,7 +2,8 @@ rootProject.name = "gspm"
 
 @Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
-	repositories {
-		mavenCentral()
-	}
+    repositories {
+        mavenCentral()
+        maven("https://jitpack.io")
+    }
 }
