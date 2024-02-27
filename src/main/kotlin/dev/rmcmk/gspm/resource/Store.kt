@@ -6,9 +6,9 @@ class Store(gspm: GspmExtension) {
     private val path = gspm.storageDirectory.asFile.get()
 
     @Suppress("unused")
-    private val gitIgnore = GitIgnore(path.resolve(".gitignore"))
+    private val gitIgnore = Resource<GitIgnore>(path.resolve(".gitignore"))
 
-    val initScript = InitScript(path.resolve("init.gradle.kts"))
+    val initScript = Resource<InitScript>(path.resolve("init.gradle.kts"))
 
     companion object {
         const val DEFAULT_STORAGE_DIRECTORY = ".gspm"

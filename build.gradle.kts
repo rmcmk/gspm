@@ -1,5 +1,7 @@
+import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
+
 plugins {
-    `kotlin-dsl`
+    kotlin("jvm") version "1.9.22"
     alias(libs.plugins.gradle.publish)
     alias(libs.plugins.kotlinter)
 }
@@ -7,11 +9,14 @@ plugins {
 group = "com.github.rmcmk.gspm"
 version = "1.0.0-RC14"
 
-kotlin {
-    jvmToolchain(17)
+plugins.withType<KotlinPluginWrapper> {
+    kotlin {
+        jvmToolchain(17)
+    }
 }
 
 dependencies {
+    implementation(kotlin("gradle-plugin"))
     implementation(libs.java.ini.parser)
     implementation(libs.gmvmb)
 }
