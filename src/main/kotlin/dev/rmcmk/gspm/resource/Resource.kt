@@ -17,7 +17,9 @@ abstract class Resource {
     }
 
     companion object {
-        inline operator fun <reified T : Resource> invoke(file: File, constructor: (File) -> T): T =
-            constructor(file).apply { sync() }
+        inline operator fun <reified T : Resource> invoke(
+            file: File,
+            constructor: (File) -> T,
+        ): T = constructor(file).apply { sync() }
     }
 }
