@@ -5,7 +5,11 @@ plugins {
 }
 
 group = "com.github.rmcmk.gspm"
-version = "1.0.0-RC13"
+version = "1.0.0-RC14"
+
+kotlin {
+    jvmToolchain(17)
+}
 
 dependencies {
     implementation(libs.java.ini.parser)
