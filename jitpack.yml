@@ -1,0 +1,8 @@
+before_install:
+    - sdk update
+    - sdk list java
+    - sdk install java 17.0.10-tem
+    - sdk use java 17.0.10-tem
+
+install:
+    - ./gradlew clean -xtest assemble publishToMavenLocal
