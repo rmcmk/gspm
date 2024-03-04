@@ -8,6 +8,7 @@ import org.gradle.api.initialization.dsl.VersionCatalogBuilder
 import org.gradle.api.logging.Logging
 import org.gradle.kotlin.dsl.model
 import org.gradle.tooling.GradleConnector
+import org.gradle.tooling.model.GradleModuleVersion
 import java.io.ByteArrayOutputStream
 import java.util.LinkedList
 import java.util.concurrent.Executors
@@ -67,29 +68,24 @@ class GradleModuleService(private val store: Store, private val gspm: GspmExtens
     companion object {
         private val logger = Logging.getLogger(GradleModuleService::class.java)
 
-        private fun GradleModule.mapVersions() =
-            buildList {
-                add("${version.group}:${version.name}:${version.version}")
-
-                children.forEach {
-                    // No need to map children's versions number as it is inherited from the parent
-                    add("${it.version.group}:${it.version.name}")
+        private fun GradleModule.prettyPrintVersions(versionCatalogBuilder: VersionCatalogBuilder) {
+            val first = "-> ${version.group}:${version.name}:${version.version}"
+            val rest =
+                children.joinToString {
+                    "\n----> ${it.version.group}:${it.version.name}"
                 }
-            }
-
-        private fun prettyPrintVersions(
-            versions: List<String>,
-            versionCatalogBuilder: VersionCatalogBuilder,
-        ) {
-            val first = versions.first()
-            val rest = versions.drop(1).joinToString { "\n------> $it" }
-            logger.lifecycle("Version Catalog: ${versionCatalogBuilder.name} ->\n$first\n$rest")
+            logger.lifecycle("Version Catalog: \"${versionCatalogBuilder.name}\" ->\n$first$rest")
         }
 
         fun GradleModule.addTo(versionCatalogBuilder: VersionCatalogBuilder) {
-            val versions = mapVersions()
-            prettyPrintVersions(versions, versionCatalogBuilder)
-            versions.forEach { versionCatalogBuilder.library(version.name, it) }
+            prettyPrintVersions(versionCatalogBuilder)
+
+            version.addTo(versionCatalogBuilder)
+            children.forEach { it.version.addTo(versionCatalogBuilder) }
+        }
+
+        private fun GradleModuleVersion.addTo(versionCatalogBuilder: VersionCatalogBuilder) {
+            versionCatalogBuilder.library(name, group, name).version(version)
         }
     }
 }
