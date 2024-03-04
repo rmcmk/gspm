@@ -80,12 +80,13 @@ class GradleModuleService(private val store: Store, private val gspm: GspmExtens
         fun GradleModule.addTo(versionCatalogBuilder: VersionCatalogBuilder) {
             prettyPrintVersions(versionCatalogBuilder)
 
-            version.addTo(versionCatalogBuilder)
-            children.forEach { it.version.addTo(versionCatalogBuilder) }
+            versionCatalogBuilder.addTo(version).version(version.version)
+            children.forEach {
+                versionCatalogBuilder.addTo(it.version)
+            }
         }
 
-        private fun GradleModuleVersion.addTo(versionCatalogBuilder: VersionCatalogBuilder) {
-            versionCatalogBuilder.library(name, group, name).version(version)
-        }
+        private fun VersionCatalogBuilder.addTo(version: GradleModuleVersion) =
+            library(version.name, version.group, version.name)
     }
 }
