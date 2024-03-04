@@ -4,15 +4,15 @@ import dev.rmcmk.git.SubmoduleDefinition
 import dev.rmcmk.gradle.gmvmb.GradleModule
 import dev.rmcmk.gspm.GspmExtension
 import dev.rmcmk.gspm.resource.Store
+import org.gradle.api.initialization.dsl.VersionCatalogBuilder
+import org.gradle.api.logging.Logging
+import org.gradle.kotlin.dsl.model
+import org.gradle.tooling.GradleConnector
 import java.io.ByteArrayOutputStream
 import java.util.LinkedList
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
-import org.gradle.api.initialization.dsl.VersionCatalogBuilder
-import org.gradle.api.logging.Logging
-import org.gradle.kotlin.dsl.model
-import org.gradle.tooling.GradleConnector
 
 class GradleModuleService(private val store: Store, private val gspm: GspmExtension) : AutoCloseable {
     private val executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
@@ -67,16 +67,20 @@ class GradleModuleService(private val store: Store, private val gspm: GspmExtens
     companion object {
         private val logger = Logging.getLogger(GradleModuleService::class.java)
 
-        private fun GradleModule.mapVersions() = buildList {
-            add("${version.group}:${version.name}:${version.version}")
+        private fun GradleModule.mapVersions() =
+            buildList {
+                add("${version.group}:${version.name}:${version.version}")
 
-            children.forEach {
-                // No need to map children's versions number as it is inherited from the parent
-                add("${it.version.group}:${it.version.name}")
+                children.forEach {
+                    // No need to map children's versions number as it is inherited from the parent
+                    add("${it.version.group}:${it.version.name}")
+                }
             }
-        }
 
-        private fun prettyPrintVersions(versions: List<String>, versionCatalogBuilder: VersionCatalogBuilder) {
+        private fun prettyPrintVersions(
+            versions: List<String>,
+            versionCatalogBuilder: VersionCatalogBuilder,
+        ) {
             val first = versions.first()
             val rest = versions.drop(1).joinToString { "\n------> $it" }
             logger.lifecycle("Version Catalog: ${versionCatalogBuilder.name} ->\n$first\n$rest")
