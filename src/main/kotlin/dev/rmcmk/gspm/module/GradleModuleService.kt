@@ -4,15 +4,15 @@ import dev.rmcmk.git.SubmoduleDefinition
 import dev.rmcmk.gradle.gmvmb.GradleModule
 import dev.rmcmk.gspm.GspmExtension
 import dev.rmcmk.gspm.resource.Store
-import org.gradle.api.initialization.dsl.VersionCatalogBuilder
-import org.gradle.api.logging.Logging
-import org.gradle.kotlin.dsl.model
-import org.gradle.tooling.GradleConnector
 import java.io.ByteArrayOutputStream
 import java.util.LinkedList
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import org.gradle.api.initialization.dsl.VersionCatalogBuilder
+import org.gradle.api.logging.Logging
+import org.gradle.kotlin.dsl.model
+import org.gradle.tooling.GradleConnector
 
 class GradleModuleService(private val store: Store, private val gspm: GspmExtension) : AutoCloseable {
     private val executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
@@ -31,7 +31,11 @@ class GradleModuleService(private val store: Store, private val gspm: GspmExtens
         }
 
         awaitAll().forEach {
-            it.module.addTo(versionCatalog)
+            val module = it.module
+            module.addTo(versionCatalog)
+            module.children.forEach { child ->
+                child.addTo(versionCatalog)
+            }
         }
     }
 
