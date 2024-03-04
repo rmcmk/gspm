@@ -20,7 +20,7 @@ abstract class GspmPlugin : Plugin<Settings> {
     override fun apply(settings: Settings) {
         val gspm = settings.extensions.create<GspmExtension>("gspm", settings.layout.settingsDirectory)
         val store = Store(gspm)
-        val moduleService = GradleModuleService(store, gspm)
+        val moduleService = GradleModuleService(store, gspm, settings)
         val versionCatalog =
             settings.dependencyResolutionManagement.versionCatalogs.create(gspm.versionCatalogName.get())
 

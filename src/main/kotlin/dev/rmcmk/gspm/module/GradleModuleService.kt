@@ -4,6 +4,7 @@ import dev.rmcmk.git.SubmoduleDefinition
 import dev.rmcmk.gradle.gmvmb.GradleModule
 import dev.rmcmk.gspm.GspmExtension
 import dev.rmcmk.gspm.resource.Store
+import org.gradle.api.initialization.Settings
 import org.gradle.api.initialization.dsl.VersionCatalogBuilder
 import org.gradle.api.logging.Logging
 import org.gradle.kotlin.dsl.model
@@ -15,7 +16,11 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
-class GradleModuleService(private val store: Store, private val gspm: GspmExtension) : AutoCloseable {
+class GradleModuleService(
+    private val store: Store,
+    private val gspm: GspmExtension,
+    private val settings: Settings,
+) : AutoCloseable {
     private val executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
     private val resultQueue = LinkedList<Future<GradleModuleResult>>()
     private val connector = GradleConnector.newConnector().useBuildDistribution()
@@ -28,6 +33,7 @@ class GradleModuleService(private val store: Store, private val gspm: GspmExtens
                 return@forEach
             }
 
+            settings.includeBuild(path)
             queue(definition)
         }
 
@@ -74,19 +80,19 @@ class GradleModuleService(private val store: Store, private val gspm: GspmExtens
                 children.joinToString {
                     "\n----> ${it.version.group}:${it.version.name}"
                 }
-            logger.lifecycle("Version Catalog: \"${versionCatalogBuilder.name}\" ->\n$first$rest")
+            logger.lifecycle("Version Catalog: \"${versionCatalogBuilder.name}\" \n$first$rest")
         }
 
         fun GradleModule.addTo(versionCatalogBuilder: VersionCatalogBuilder) {
             prettyPrintVersions(versionCatalogBuilder)
 
-            versionCatalogBuilder.addTo(version).version(version.version)
+            versionCatalogBuilder.addTo(version)
             children.forEach {
                 versionCatalogBuilder.addTo(it.version)
             }
         }
 
         private fun VersionCatalogBuilder.addTo(version: GradleModuleVersion) =
-            library(version.name, version.group, version.name)
+            library(version.name, version.group, version.name).withoutVersion()
     }
 }
