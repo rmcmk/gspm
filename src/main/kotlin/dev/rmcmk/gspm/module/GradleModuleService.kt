@@ -31,11 +31,7 @@ class GradleModuleService(private val store: Store, private val gspm: GspmExtens
         }
 
         awaitAll().forEach {
-            val module = it.module
-            module.addTo(versionCatalog)
-            module.children.forEach { child ->
-                child.addTo(versionCatalog)
-            }
+            it.module.addTo(versionCatalog)
         }
     }
 
@@ -71,17 +67,25 @@ class GradleModuleService(private val store: Store, private val gspm: GspmExtens
     companion object {
         private val logger = Logging.getLogger(GradleModuleService::class.java)
 
-        fun GradleModule.addTo(versionCatalogBuilder: VersionCatalogBuilder) =
-            with(version) {
-                val groupArtifactVersion = "$group:$name:$version"
-                val versionCatalogNotation = "${versionCatalogBuilder.name}.$name"
-                logger.lifecycle(
-                    "GspmPlugin: Adding \"{}\" to the \"{}\" version catalog. Use \"{}\" to reference this module.",
-                    groupArtifactVersion,
-                    versionCatalogBuilder.name,
-                    versionCatalogNotation,
-                )
-                versionCatalogBuilder.library(name, groupArtifactVersion)
+        private fun GradleModule.mapVersions() = buildList {
+            add("${version.group}:${version.name}:${version.version}")
+
+            children.forEach {
+                // No need to map children's versions number as it is inherited from the parent
+                add("${it.version.group}:${it.version.name}")
             }
+        }
+
+        private fun prettyPrintVersions(versions: List<String>, versionCatalogBuilder: VersionCatalogBuilder) {
+            val first = versions.first()
+            val rest = versions.drop(1).joinToString { "\n------> $it" }
+            logger.lifecycle("Version Catalog: ${versionCatalogBuilder.name} ->\n$first\n$rest")
+        }
+
+        fun GradleModule.addTo(versionCatalogBuilder: VersionCatalogBuilder) {
+            val versions = mapVersions()
+            prettyPrintVersions(versions, versionCatalogBuilder)
+            versions.forEach { versionCatalogBuilder.library(version.name, it) }
+        }
     }
 }
