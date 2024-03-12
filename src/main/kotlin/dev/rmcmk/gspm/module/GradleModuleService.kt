@@ -23,7 +23,7 @@ class GradleModuleService(
 ) : AutoCloseable {
     private val executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
     private val resultQueue = LinkedList<Future<GradleModuleResult>>()
-    private val connector = GradleConnector.newConnector().useBuildDistribution()
+    private val connector = GradleConnector.newConnector().useGradleVersion(settings.gradle.gradleVersion)
 
     fun discoverSubmodules(versionCatalog: VersionCatalogBuilder) {
         val submodules = gspm.gitSubmoduleDefinitions.get()
